@@ -1,4 +1,4 @@
-FROM tozd/postfix:alpine-322
+FROM docker.io/tozd/dinit:alpine-322
 
 EXPOSE 25/tcp 465/tcp 587/tcp
 
@@ -26,8 +26,6 @@ RUN postconf -e mydestination="localhost.localdomain, localhost" && \
 
 ENV POSTFIX_PATH="/usr/libexec/postfix/master"
 
+COPY ./etc/postfix/sasl/smtpd.conf /etc/postfix/sasl
 COPY ./etc/aliases /etc/aliases
 COPY ./etc/service/postfix /etc/service/postfix
-COPY ./etc/service/postfix /etc/service/saslauthd
-COPY ./etc/smtpd.conf /etc/postfix/sasl
-
