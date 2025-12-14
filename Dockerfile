@@ -22,7 +22,10 @@ RUN postconf -e mydestination="localhost.localdomain, localhost" && \
   postconf -e "smtpd_sasl_auth_enable = yes" && \
   postconf -e "smtpd_sasl_path = smtpd" && \
   postconf -e "cyrus_sasl_config_path = /etc/postfix/sasl" && \
-  mkdir /etc/postfix/sasl
+  mkdir /etc/postfix/sasl && \
+  mkdir /var/spool/filter && \
+  chown nobody /var/spool/filter
+
 
 ENV POSTFIX_PATH="/usr/libexec/postfix/master"
 
@@ -30,3 +33,4 @@ COPY ./etc/postfix/sasl/smtpd.conf /etc/postfix/sasl
 COPY ./etc/aliases /etc/aliases
 COPY ./etc/service/postfix /etc/service/postfix
 COPY ./etc/service/saslauthd /etc/service/saslauthd
+COPY ./usr/local/bin /usr/local/bin
