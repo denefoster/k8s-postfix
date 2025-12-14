@@ -29,3 +29,4 @@ ENV POSTFIX_PATH="/usr/libexec/postfix/master"
 COPY ./etc/postfix/sasl/smtpd.conf /etc/postfix/sasl
 COPY ./etc/aliases /etc/aliases
 COPY ./etc/service/postfix /etc/service/postfix
+COPY ./etc/service/saslauthd /etc/service/saslauthd
