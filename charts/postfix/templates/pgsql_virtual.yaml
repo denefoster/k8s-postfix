@@ -1,0 +1,11 @@
+{{- if .Values.pgsql_virtual.create -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.pgsql_virtual.name }}
+  labels:
+    {{- include "postfix.labels" . | nindent 4 }}
+type: Opaque
+data:
+  pgsql-virtual.cf: {{ .Values.pgsql_virtual.data.pgsql_virtual.cf | b64enc }}
+{{- end }}

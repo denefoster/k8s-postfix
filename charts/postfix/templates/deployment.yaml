@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "postfix.fullname" . }}
+  labels:
+    {{- include "postfix.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "postfix.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "postfix.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "postfix.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: postfix-init
+              mountPath: /etc/service/postfix/run.initialization
+              subPath: run.initialization
+          {{- if .Values.postfix.helo_checks }}
+            - name: postfix-init
+              mountPath: /etc/postfix/helo_checks
+              subPath: helo_checks
+          {{- end }}
+          {{- if .Values.postfix.header_checks }}
+            - name: postfix-init
+              mountPath: /etc/postfix/header_checks
+              subPath: header_checks
+          {{- end }}
+          {{- if .Values.postfix.body_checks }}
+            - name: postfix-init
+              mountPath: /etc/postfix/body_checks
+              subPath: body_checks
+          {{- end }}
+          {{- if .Values.postfix.envelopep_sender_checks }}
+            - name: postfix-init
+              mountPath: /etc/postfix/envelope_sender_checks
+              subPath: envelope_sender_checks
+          {{- end }}
+            - name: {{ .Values.postfix.tlsExistingSecretName }}
+              mountPath: /etc/tls
+              readOnly: true
+      volumes:
+        - name: {{ .Values.postfix.tlsExistingSecretName }}
+          secret:
+            secretName: {{ .Values.postfix.tlsExistingSecretName }}
+        - name: postfix-init
+          configMap:
+            name: postfix-init
+            defaultMode: 0777
+        {{- if .Values.postfix.transport_maps }}
+        {{- range $map := .Values.postfix.transport_maps }}
+        - {{ $map.existingSecretName }}:
+            secretName: {{ $map.existingSecretName }}
+            items:
+              - key: {{ $map.existingSecretKey }}
+                path: key
+        {{- end }}
+        {{- end }}
+        {{- if .Values.postfix.relay_domains }}
+        {{- range $relay_domain := .Values.postfix.relay_domains }}
+        - {{ $relay_domain.existingSecretName }}:
+            secretName: {{ $relay_domain.existingSecretName }}
+            items:
+              - key: {{ $relay_domain.existingSecretKey }}
+                path: key
+        {{- end }}
+        {{- end }}
+        {{- if .Values.postfix.local_recipient_maps }}
+        {{- range $local_recipient_map := .Values.postfix.local_recipient_maps }}
+        - {{ $local_recipient_map.existingSecretName }}:
+            secretName: {{ $local_recipient_map.existingSecretName }}
+            items:
+              - key: {{ $local_recipient_map.existingSecretKey }}
+                path: key
+        {{- end }}
+        {{- end }}
+        {{- if .Values.postfix.virtual_alias_maps }}
+        {{- range $virtual_alias_map := .Values.postfix.virtual_alias_maps }}
+        - {{ $virtual_alias_map.existingSecretName }}:
+            secretName: {{ $virtual_alias_map.existingSecretName }}
+            items:
+              - key: {{ $virtual_alias_map.existingSecretKey }}
+                path: key
+        {{- end }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postfix-init
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "postfix.labels" . | nindent 4 }}
+data:
+  {{ if .Values.postfix.helo_checks }}
+  helo_checks: |
+    {{- range $check := .Values.postfix.helo_checks }}
+      {{ $check.name }} {{ $check.action }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.postfix.header_checks }}
+  header_checks: |
+    {{- range $check := .Values.postfix.header_checks }}
+      {{ $check.name }} {{ $check.action }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.postfix.body_checks }}
+  body_checks: |
+    {{- range $check := .Values.postfix.body_checks }}
+      {{ $check.name }} {{ $check.action }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.postfix.envelopep_sender_checks }}
+  envelope_sender_checks: |
+    {{- range $check := .Values.postfix.envelope_sender_checks }}
+      {{ $check.name }} {{ $check.action }}
+    {{- end }}
+  {{- end }}
+  run.initialization: |
+    postconf "myhostname = {{ .Values.postfix.hostname }}"
+    postconf "mynetworks = {{ .Values.postfix.mynetworks | join " " }}"
+    postconf "recipient_delimiter = +"
+    postconf "owner_request_special = no"
+    postconf "smtpd_sasl_auth_enable = yes"
+    {{- if .Values.postfix.tls_enabled }}
+    postconf "smtpd_tls_auth_only = yes"
+    {{- end }}
+
+    {{- if .Values.postfix.helo_checks }}
+    # HELO checks
+    postconf "smtpd_helo_required = yes"
+    postconf "smtpd_helo_restrictions = permit_mynetworks, check_helo_access lmdb:/etc/postfix/helo_checks, permit"
+    postmap /etc/postfix/helo_checks
+    {{- end }}
+
+    {{- if .Values.postfix.header_checks }}
+    # Header checks
+    postconf "header_checks = regexp:/etc/postfix/header_checks"
+    {{- end }}
+
+    {{- if .Values.postfix.body_checks }}
+    # Body checks
+    postconf "body_checks = regexp:/etc/postfix/body_checks"
+    {{- end }}
+
+    {{- if .Values.postfix.envelope_sender_checks }}
+    # Envelope sender checks
+    postmap /etc/postfix/envelope_sender_checks
+    postconf "smtpd_sender_login_maps = lmdb:/etc/postfix/envelope_sender_checks:/etc/postfix/envelope_sender_checks"
+    {{- end }}
+
+    {{- if .Values.postfix.tls_enabled }}
+    # TLS config
+    postconf "smtpd_tls_security_level = may"
+    postconf "smtpd_tls_cert_file = /etc/tls/tls.crt"
+    postconf "smtpd_tls_key_file = /etc/tls/tls.key"
+    {{- end }}
+
+    # MILTER config
+    postconf "milter_default_action = accept"
+    postconf "milter_connect_timeout = 30s"
+    postconf "milter_command_timeout = 30s"
+    postconf "milter_content_timeout = 300s"
+    postconf "milter_protocol = 6"
+    {{- if .Values.postfix.milters_active }}
+    {{ .Values.postfix.smtpd_milter_config }}
+    {{ .Values.postfix.non_smtpd_milter_config }}
+    {{- if .Values.postfix.other_milter_config }}
+    {{- range .Values.postfix.other_milter_config }}
+    {{ . }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+
+    {{ if .Values.postfix.relay_host }}
+    # Relay config
+    postconf "relayhost = {{ .Values.postfix.relay_host }}"
+    {{- end }}
+
+    # transport config
+    postconf "transport_maps = pgsql:/etc/postfix/pgsql-transport.cf, pgsql:/etc/postfix/pgsql-transport-mm.cf"
+    postconf "relay_domains   = pgsql:/etc/postfix/pgsql-relay-domains-mm.cf, pgsql:/etc/postfix/pgsql-relay-domains.cf"
+
+    # SMTP recipients
+    # Mailman
+    postconf "local_recipient_maps = pgsql:/etc/postfix/pgsql-mailman-recipients.cf"
+    # System aliases
+    postconf "virtual_alias_maps = pgsql:/etc/postfix/pgsql-virtual.cf"
+    # Other (draft-, etc)
+    # TBD postconf "virtual_alias_maps = pgsql:/etc/postfix/pgsql-virtual.cf"
+
+    postconf "smtpd_recipient_restrictions = reject_authenticated_sender_login_mismatch permit_sasl_authenticated permit_mynetworks reject_unlisted_recipient"
+    postconf "smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated reject_unauth_destination"
+
+
+    # SMTP service for mailman, no limits, run through set-env-from.sh filter
+    postconf -M "0.0.0.0:10026/inet=0.0.0.0:10026 inet n - - - - smtpd"
+    postconf -P "0.0.0.0:10026/inet/smtpd_tls_security_level=none"
+    postconf -P "0.0.0.0:10026/inet/smtpd_milters="
+    postconf -P "0.0.0.0:10026/inet/smtpd_recipient_restrictions=permit_mynetworks,reject"
+    postconf -P "0.0.0.0:10026/inet/content_filter=envelope-rewrite:dummy"
+    postconf -M "envelope-rewrite/unix=envelope-rewrite unix - n n - 10 pipe flags=Rq user=nobody null_sender=noreply@lists.sys.slush.ca argv=/usr/local/bin/set-env-from.sh \${recipient}"
+
