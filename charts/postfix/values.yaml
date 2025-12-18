@@ -1,38 +1,76 @@
 pgsql_transport:
-  create: false
-  name: pgsql-transport
+  create: true
+  name: pgsql_transport
   data:
-    pgsql_transport.cf: xxx
+    pgsql_transport_cf: |
+      user         = my_db_user
+      password     = my_db_pass
+      dbname       = my_db_name
+      hosts        = my_db_host
+      query        = select email from mailman_recipients where email = '%s'
+
 pgsql_transport_mm:
   create: false
-  name: pgsql-transport-mm
+  name: pgsql_transport_mm
   data:
-    pgsql_transport_mm.cf: xxx
+    pgsql_transport_mm_cf: |
+      user         = my_db_user
+      password     = my_db_pass
+      dbname       = my_db_name
+      hosts        = my_db_host
+      query        = select email from mailman_recipients where email = '%s'
 pgsql_relay_domains_mm:
   create: false
-  name: pgsql-relay-domains-mm
+  name: pgsql_relay_domains_mm
   data:
-    pgsql_relay_domains_mm: xxx
+    pgsql_relay_domains_mm: |
+      user         = my_db_user
+      password     = my_db_pass
+      dbname       = my_db_name
+      hosts        = my_db_host
+      query        = select email from mailman_recipients where email = '%s'
 pgsql_relay_domains:
   create: false
-  name: pgsql-relay-domains
+  name: pgsql_relay_domains
   data:
-    pgsql_relay_domains: xxx
+    pgsql_relay_domains: |
+      user         = my_db_user
+      password     = my_db_pass
+      dbname       = my_db_name
+      hosts        = my_db_host
+      query        = select email from mailman_recipients where email = '%s'
 pgsql_mailman_recipients:
   create: false
-  name: pgsql-mailman-recipients
+  name: pgsql_mailman_recipients
   data:
-    pgsql_mailman_recipients: xxx
+    pgsql_mailman_recipients: |
+      user         = my_db_user
+      password     = my_db_pass
+      dbname       = my_db_name
+      hosts        = my_db_host
+      query        = select email from mailman_recipients where email = '%s'
 pgsql_virtual:
   create: false
   name: pgsql-virtual
   data:
-    pgsql_virtual: xxx
+    pgsql_virtual: |
+      user         = my_db_user
+      password     = my_db_pass
+      dbname       = my_db_name
+      hosts        = my_db_host
+      query        = select email from mailman_recipients where email = '%s'
 mx_tls:
   create: false
   name: mx_tls
   data:
-    mx_tls: xxx
+    tls_key: |
+      -----BEGIN EC PRIVATE KEY-----
+      ...
+      -----END EC PRIVATE KEY-----
+    tls_crt: |
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
 
 
 postfix:
@@ -40,26 +78,36 @@ postfix:
   mynetworks:
     - 127.0.0.0/8
     - 10.0.0.0/8
+  smtpd_recipient_restrictions:
+    - reject_authenticated_sender_login_mismatch
+    - permit_sasl_authenticated
+    - permit_mynetworks
+    - reject_unlisted_recipient
+  smtpd_relay_restrictions:
+    - permit_mynetworks
+    - permit_sasl_authenticated
+    - reject_unauth_destination
+
   transport_maps:
-    - name: pgsql:/etc/postfix/pgsql-transport.cf
+    "pgsql:/etc/postfix/pgsql-transport.cf":
       existingSecretName: pgsql-transport
       existingSecretKey: pgsql-transport.cf
-    - name: pgsql:/etc/postfix/pgsql-transport-mm.cf
+    "pgsql:/etc/postfix/pgsql-transport-mm.cf":
       existingSecretName: pgsql-transport-mm
       existingSecretKey: pgsql-transport-mm.cf
   relay_domains:
-    - name: pgsql:/etc/postfix/pgsql-relay-domains-mm.cf
+    "pgsql:/etc/postfix/pgsql-relay-domains-mm.cf":
       existingSecretName: pgsql-relay-domains-mm
       existingSecretKey: pgsql-relay-domains-mm.cf
-    - name: pgsql:/etc/postfix/pgsql-relay-domains.cf
+    "pgsql:/etc/postfix/pgsql-relay-domains.cf":
       existingSecretName: pgsql-relay-domains
       existingSecretKey: pgsql-relay-domains.cf
   local_recipient_maps:
-    - name: pgsql:/etc/postfix/pgsql-mailman-recipients.cf
+    "pgsql:/etc/postfix/pgsql-mailman-recipients.cf":
       existingSecretName: pgsql-mailman-recipients
       existingSecretKey: pgsql-mailman-recipients.cf
   virtual_alias_maps:
-    - name: /etc/postfix/pgsql-virtual.cf
+    "pgsql:/etc/postfix/pgsql-virtual.cf":
       existingSecretName: pgsql-virtual
       existingSecretKey: pgsql-virtual.cf
 
@@ -77,14 +125,14 @@ postfix:
       action: REJECT
     - name: User
       action: REJECT
-  milters_active: true
-  smtpd_milter_config: postconf "smtpd_milters = inet:[postconfirm]:1999,inet:[rspamd]:11332,inet:[srsmilter]:10382"
-  non_smtpd_milter_config: postconf "non_smtpd_milters = inet:[rspamd]:11332,inet:[srsmilter]:10382"
-  other_milter_config:
-    - postconf "recipient_canonical_maps = socketmap:inet:[srsmilter]:10383:decode"
-    - postconf "recipient_canonical_classes = envelope_recipient"
-  relay_host: 205.233.128.5:25
-
+  envelope_sender_checks:
+    - name: postmaster@mx.slush.ca
+      allow: dene@slush.ca
+  milters_active: false
+  smtpd_milters:
+    - inet:[rspamd]:11332
+  non_smtpd_milters:
+    - inet:[rspamd]:11332
 
 persistence:
   # -- Enable persistence using Persistent Volume Claims

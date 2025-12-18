@@ -21,13 +21,13 @@ data:
   {{- if .Values.postfix.body_checks }}
   body_checks: |
     {{- range $check := .Values.postfix.body_checks }}
-      {{ $check.name }} {{ $check.action }}
+      {{ $check.name }} {{ $check.allow }}
     {{- end }}
   {{- end }}
-  {{- if .Values.postfix.envelopep_sender_checks }}
+  {{- if .Values.postfix.envelope_sender_checks }}
   envelope_sender_checks: |
     {{- range $check := .Values.postfix.envelope_sender_checks }}
-      {{ $check.name }} {{ $check.action }}
+      {{ $check.name }} {{ $check.allow }}
     {{- end }}
   {{- end }}
   run.initialization: |
@@ -60,7 +60,7 @@ data:
     {{- if .Values.postfix.envelope_sender_checks }}
     # Envelope sender checks
     postmap /etc/postfix/envelope_sender_checks
-    postconf "smtpd_sender_login_maps = lmdb:/etc/postfix/envelope_sender_checks:/etc/postfix/envelope_sender_checks"
+    postconf "smtpd_sender_login_maps = lmdb:/etc/postfix/envelope_sender_checks"
     {{- end }}
 
     {{- if .Values.postfix.tls_enabled }}
@@ -77,8 +77,8 @@ data:
     postconf "milter_content_timeout = 300s"
     postconf "milter_protocol = 6"
     {{- if .Values.postfix.milters_active }}
-    {{ .Values.postfix.smtpd_milter_config }}
-    {{ .Values.postfix.non_smtpd_milter_config }}
+    postconf "smtpd_smtpd_milters = {{ .Values.postfix.smtpd_milters | join "," }}"
+    postconf "non_smtpd_smtpd_milters = {{ .Values.postfix.non_smtpd_milters | join "," }}"
     {{- if .Values.postfix.other_milter_config }}
     {{- range .Values.postfix.other_milter_config }}
     {{ . }}
@@ -91,27 +91,28 @@ data:
     postconf "relayhost = {{ .Values.postfix.relay_host }}"
     {{- end }}
 
-    # transport config
-    postconf "transport_maps = pgsql:/etc/postfix/pgsql-transport.cf, pgsql:/etc/postfix/pgsql-transport-mm.cf"
-    postconf "relay_domains   = pgsql:/etc/postfix/pgsql-relay-domains-mm.cf, pgsql:/etc/postfix/pgsql-relay-domains.cf"
+    {{ if .Values.postfix.transport_maps }}
+    postconf "transport_maps = {{ keys .Values.postfix.transport_maps | join ", " }}"
+    {{- end }}
+
+    {{ if .Values.postfix.relay_domains }}
+    postconf "relay_domains = {{ keys .Values.postfix.relay_domains | join ", " }}"
+    {{- end }}
 
     # SMTP recipients
-    # Mailman
-    postconf "local_recipient_maps = pgsql:/etc/postfix/pgsql-mailman-recipients.cf"
-    # System aliases
-    postconf "virtual_alias_maps = pgsql:/etc/postfix/pgsql-virtual.cf"
-    # Other (draft-, etc)
-    # TBD postconf "virtual_alias_maps = pgsql:/etc/postfix/pgsql-virtual.cf"
+    {{ if .Values.postfix.local_recipient_maps }}
+    postconf "local_recipient_maps = {{ keys .Values.postfix.local_recipient_maps | join ", "}}"
+    {{- end }}
 
-    postconf "smtpd_recipient_restrictions = reject_authenticated_sender_login_mismatch permit_sasl_authenticated permit_mynetworks reject_unlisted_recipient"
-    postconf "smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated reject_unauth_destination"
+    {{ if .Values.postfix.virtual_alias_maps }}
+    postconf "virtual_alias_maps = {{ keys .Values.postfix.virtual_alias_maps | join ", "}}"
+    {{- end }}
 
+    postconf "smtpd_recipient_restrictions = {{ .Values.postfix.smtpd_recipient_restrictions | join " " }}"
+    postconf "smtpd_relay_restrictions = {{ .Values.postfix.smtpd_relay_restrictions | join " " }}"
 
-    # SMTP service for mailman, no limits, run through set-env-from.sh filter
-    postconf -M "0.0.0.0:10026/inet=0.0.0.0:10026 inet n - - - - smtpd"
-    postconf -P "0.0.0.0:10026/inet/smtpd_tls_security_level=none"
-    postconf -P "0.0.0.0:10026/inet/smtpd_milters="
-    postconf -P "0.0.0.0:10026/inet/smtpd_recipient_restrictions=permit_mynetworks,reject"
-    postconf -P "0.0.0.0:10026/inet/content_filter=envelope-rewrite:dummy"
-    postconf -M "envelope-rewrite/unix=envelope-rewrite unix - n n - 10 pipe flags=Rq user=nobody null_sender=noreply@lists.sys.slush.ca argv=/usr/local/bin/set-env-from.sh \${recipient}"
-
+    {{ if .Values.postfix.extra_config }}
+    {{- range .Values.postfix.extra_config }}
+    {{ . }}
+    {{- end }}
+    {{- end }}
