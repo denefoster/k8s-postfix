@@ -72,53 +72,112 @@ spec:
               mountPath: /etc/postfix/envelope_sender_checks
               subPath: envelope_sender_checks
           {{- end }}
+          {{- if .Values.postfix.tlsEnabled }}
             - name: {{ .Values.postfix.tlsExistingSecretName }}
               mountPath: /etc/tls
               readOnly: true
+          {{- end }}
+          {{- if .Values.persistence.sasl.enabled }}
+            - name: {{ include "postfix.fullname" . }}-sasl
+              mountPath: /etc/sasl2
+          {{- end }}
+          {{- if .Values.persistence.queue.enabled }}
+            - name: {{ include "postfix.fullname" . }}-queue
+              mountPath: /var/spool/postfix
+          {{- end }}
+          {{- if .Values.postfix.transport_maps }}
+            {{- range $pfmap := .Values.postfix.transport_maps }}
+            - name: {{ .existingSecretName }}
+              subPath: {{ .existingSecretKey }}
+              mountPath: /etc/postfix/{{ .existingSecretKey }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.postfix.relay_domains }}
+            {{- range $pfmap := .Values.postfix.relay_domains }}
+            - name: {{ .existingSecretName }}
+              subPath: {{ .existingSecretKey }}
+              mountPath: /etc/postfix/{{ .existingSecretKey }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.postfix.local_recipient_maps }}
+            {{- range $pfmap := .Values.postfix.local_recipient_maps }}
+            - name: {{ .existingSecretName }}
+              subPath: {{ .existingSecretKey }}
+              mountPath: /etc/postfix/{{ .existingSecretKey }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.postfix.virtual_alias_maps }}
+            {{- range $pfmap := .Values.postfix.virtual_alias_maps }}
+            - name: {{ .existingSecretName }}
+              subPath: {{ .existingSecretKey }}
+              mountPath: /etc/postfix/{{ .existingSecretKey }}
+          {{- end }}
+          {{- end }}
       volumes:
-        - name: {{ .Values.postfix.tlsExistingSecretName }}
-          secret:
-            secretName: {{ .Values.postfix.tlsExistingSecretName }}
         - name: postfix-init
           configMap:
             name: postfix-init
             defaultMode: 0777
-        {{- if .Values.postfix.transport_maps }}
-        {{- range $map := .Values.postfix.transport_maps }}
-        - {{ $map.existingSecretName }}:
-            secretName: {{ $map.existingSecretName }}
-            items:
-              - key: {{ $map.existingSecretKey }}
-                path: key
+        {{- if .Values.persistence.queue.enabled }}
+        - name: {{ include "postfix.fullname" . }}-queue
+          persistentVolumeClaim:
+            claimName: {{ include "postfix.fullname" . }}-queue
         {{- end }}
+        {{- if .Values.persistence.sasl.enabled }}
+        - name: {{ include "postfix.fullname" . }}-sasl
+          persistentVolumeClaim:
+            claimName: {{ include "postfix.fullname" . }}-sasl
+        {{- end }}
+        {{- if .Values.postfix.tlsEnabled }}
+        - name: {{ .Values.postfix.tlsExistingSecretName }}
+          secret:
+            secretName: {{ .Values.postfix.tlsExistingSecretName }}
+        {{- end }}
+        {{- if .Values.postfix.transport_maps }}
+          {{- range $pfmap := .Values.postfix.transport_maps }}
+            {{- $secrets := list }}
+            {{- $secretList := append $secrets $pfmap.existingSecretName }}
+            {{- range $secretList | uniq }}
+        - name: {{ . }}
+          secret:
+            secretName: {{ . }}
+            {{- end }}
+          {{- end }}
         {{- end }}
         {{- if .Values.postfix.relay_domains }}
-        {{- range $relay_domain := .Values.postfix.relay_domains }}
-        - {{ $relay_domain.existingSecretName }}:
-            secretName: {{ $relay_domain.existingSecretName }}
-            items:
-              - key: {{ $relay_domain.existingSecretKey }}
-                path: key
-        {{- end }}
+          {{- range $pfmap := .Values.postfix.relay_domains }}
+            {{- $secrets := list }}
+            {{- $secretList := append $secrets $pfmap.existingSecretName }}
+            {{- range $secretList | uniq }}
+        - name: {{ . }}
+          secret:
+            secretName: {{ . }}
+            {{- end }}
+          {{- end }}
         {{- end }}
         {{- if .Values.postfix.local_recipient_maps }}
-        {{- range $local_recipient_map := .Values.postfix.local_recipient_maps }}
-        - {{ $local_recipient_map.existingSecretName }}:
-            secretName: {{ $local_recipient_map.existingSecretName }}
-            items:
-              - key: {{ $local_recipient_map.existingSecretKey }}
-                path: key
-        {{- end }}
+          {{- range $pfmap := .Values.postfix.local_recipient_maps }}
+            {{- $secrets := list }}
+            {{- $secretList := append $secrets $pfmap.existingSecretName }}
+            {{- range $secretList | uniq }}
+        - name: {{ . }}
+          secret:
+            secretName: {{ . }}
+            {{- end }}
+          {{- end }}
         {{- end }}
         {{- if .Values.postfix.virtual_alias_maps }}
-        {{- range $virtual_alias_map := .Values.postfix.virtual_alias_maps }}
-        - {{ $virtual_alias_map.existingSecretName }}:
-            secretName: {{ $virtual_alias_map.existingSecretName }}
-            items:
-              - key: {{ $virtual_alias_map.existingSecretKey }}
-                path: key
+          {{- range $pfmap := .Values.postfix.virtual_alias_maps }}
+            {{- $secrets := list }}
+            {{- $secretList := append $secrets $pfmap.existingSecretName }}
+            {{- range $secretList | uniq }}
+        - name: {{ . }}
+          secret:
+            secretName: {{ . }}
+            {{- end }}
+          {{- end }}
         {{- end }}
-        {{- end }}
+
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

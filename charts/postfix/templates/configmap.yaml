@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "postfix.labels" . | nindent 4 }}
 data:
-  {{ if .Values.postfix.helo_checks }}
+  {{- if .Values.postfix.helo_checks }}
   helo_checks: |
     {{- range $check := .Values.postfix.helo_checks }}
       {{ $check.name }} {{ $check.action }}
@@ -36,7 +36,7 @@ data:
     postconf "recipient_delimiter = +"
     postconf "owner_request_special = no"
     postconf "smtpd_sasl_auth_enable = yes"
-    {{- if .Values.postfix.tls_enabled }}
+    {{- if .Values.postfix.tlsEnabled }}
     postconf "smtpd_tls_auth_only = yes"
     {{- end }}
 
@@ -63,7 +63,7 @@ data:
     postconf "smtpd_sender_login_maps = lmdb:/etc/postfix/envelope_sender_checks"
     {{- end }}
 
-    {{- if .Values.postfix.tls_enabled }}
+    {{- if .Values.postfix.tlsEnabled }}
     # TLS config
     postconf "smtpd_tls_security_level = may"
     postconf "smtpd_tls_cert_file = /etc/tls/tls.crt"

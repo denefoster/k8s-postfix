@@ -1,8 +1,8 @@
 pgsql_transport:
-  create: true
+  create: false
   name: pgsql_transport
   data:
-    pgsql_transport_cf: |
+    pgsql_transport: |
       user         = my_db_user
       password     = my_db_pass
       dbname       = my_db_name
@@ -13,7 +13,7 @@ pgsql_transport_mm:
   create: false
   name: pgsql_transport_mm
   data:
-    pgsql_transport_mm_cf: |
+    pgsql_transport_mm: |
       user         = my_db_user
       password     = my_db_pass
       dbname       = my_db_name
@@ -112,7 +112,7 @@ postfix:
       existingSecretKey: pgsql-virtual.cf
 
 
-  tls_enabled: true
+  tlsEnabled: true
   tlsExistingSecretName: mx_tls
   helo_checks:
     - name: localhost
@@ -138,17 +138,30 @@ persistence:
   # -- Enable persistence using Persistent Volume Claims
   # ref: http://kubernetes.io/docs/user-guide/persistent-volumes/.
   # It can be used to store TLS certificates along with `certificatesResolvers.<name>.acme.storage`  option
-  enabled: false
-  name: data
-  existingClaim: ""
-  accessMode: ReadWriteOnce
-  size: 128Mi
-  storageClass: ""
-  volumeName: ""
-  path: /data
-  annotations: {}
-  # -- Only mount a subpath of the Volume into the pod
-  subPath: ""
+  sasl:
+    enabled: false
+    name: sasl
+    existingClaim: ""
+    accessMode: ReadWriteOnce
+    size: 128Mi
+    storageClass: ""
+    volumeName: ""
+    path: /etc/sasl2
+    annotations: {}
+    # -- Only mount a subpath of the Volume into the pod
+    subPath: ""
+  queue:
+    enabled: false
+    name: queue
+    existingClaim: ""
+    accessMode: ReadWriteOnce
+    size: 128Mi
+    storageClass: ""
+    volumeName: ""
+    path: /var/spool/postfix
+    annotations: {}
+    # -- Only mount a subpath of the Volume into the pod
+    subPath: ""
 
 # Default values for postfix.
 # This is a YAML-formatted file.
