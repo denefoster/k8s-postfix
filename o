@@ -1,0 +1,85 @@
+apiVersion: v1
+data:
+  envelope_sender_checks: |
+    postmaster@mx.slush.ca dene@slush.ca
+  helo_checks: |
+    localhost REJECT
+    localhost.localdomain REJECT
+    127.0.0.1 REJECT
+    [127.0.0.1] REJECT
+    User REJECT
+    mx.slush.ca REJECT
+    lists.sys.slush.ca REJECT
+  run.initialization: |
+    postconf "myhostname = mx.slush.ca"
+    postconf "mynetworks = 127.0.0.0/8 10.0.0.0/8 205.233.128.0/24"
+    postconf "recipient_delimiter = +"
+    postconf "owner_request_special = no"
+    postconf "smtpd_sasl_auth_enable = yes"
+    postconf "smtpd_tls_auth_only = yes"
+    # HELO checks
+    postconf "smtpd_helo_required = yes"
+    postconf "smtpd_helo_restrictions = permit_mynetworks, check_helo_access lmdb:/etc/postfix/helo_checks, permit"
+    postmap /etc/postfix/helo_checks
+    # Envelope sender checks
+    postmap /etc/postfix/envelope_sender_checks
+    postconf "smtpd_sender_login_maps = lmdb:/etc/postfix/envelope_sender_checks"
+    # TLS config
+    postconf "smtpd_tls_security_level = may"
+    postconf "smtpd_tls_cert_file = /etc/tls/tls.crt"
+    postconf "smtpd_tls_key_file = /etc/tls/tls.key"
+
+    # MILTER config
+    postconf "milter_default_action = accept"
+    postconf "milter_connect_timeout = 30s"
+    postconf "milter_command_timeout = 30s"
+    postconf "milter_content_timeout = 300s"
+    postconf "milter_protocol = 6"
+    postconf "smtpd_smtpd_milters = inet:[postconfirm]:1999,inet:[rspamd]:11332,inet:[srsmilter]:10382"
+    postconf "non_smtpd_smtpd_milters = inet:[rspamd]:11332,inet:[srsmilter]:10382"
+    postconf "recipient_canonical_maps = socketmap:inet:[srsmilter]:10383:decode"
+    postconf "recipient_canonical_classes = envelope_recipient"
+
+
+    # Relay config
+    postconf "relayhost = 205.233.128.5:25"
+
+
+    postconf "transport_maps = pgsql:/etc/postfix/pgsql-transport-mm.cf, pgsql:/etc/postfix/pgsql-transport.cf"
+
+
+    postconf "relay_domains = pgsql:/etc/postfix/pgsql-relay-domains-mm.cf, pgsql:/etc/postfix/pgsql-relay-domains.cf"
+
+    # SMTP recipients
+
+    postconf "local_recipient_maps = pgsql:/etc/postfix/pgsql-mailman-recipients.cf"
+
+
+    postconf "virtual_alias_maps = pgsql:/etc/postfix/pgsql-virtual.cf"
+
+    postconf "smtpd_recipient_restrictions = reject_authenticated_sender_login_mismatch permit_sasl_authenticated permit_mynetworks reject_unlisted_recipient"
+    postconf "smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated reject_unauth_destination"
+
+
+    postconf -M "0.0.0.0:10026/inet=0.0.0.0:10026 inet n - - - - smtpd"
+    postconf -P "0.0.0.0:10026/inet/smtpd_tls_security_level=none"
+    postconf -P "0.0.0.0:10026/inet/smtpd_milters="
+    postconf -P "0.0.0.0:10026/inet/smtpd_recipient_restrictions=permit_mynetworks,reject"
+    postconf -P "0.0.0.0:10026/inet/content_filter=envelope-rewrite:dummy"
+    postconf -M "envelope-rewrite/unix=envelope-rewrite unix - n n - 10 pipe flags=Rq user=nobody null_sender=noreply@lists.sys.slush.ca argv=/usr/local/bin/set-env-from.sh \${recipient}"
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: postfix
+    meta.helm.sh/release-namespace: listserver
+  creationTimestamp: "2025-12-22T00:54:44Z"
+  labels:
+    app.kubernetes.io/instance: postfix
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postfix
+    app.kubernetes.io/version: 1.0.12
+    helm.sh/chart: postfix-1.0.12
+  name: postfix-init
+  namespace: listserver
+  resourceVersion: "79570485"
+  uid: 221ef225-f5ea-48b5-9458-6ef210c197f4
