@@ -77,8 +77,8 @@ data:
     postconf "milter_content_timeout = 300s"
     postconf "milter_protocol = 6"
     {{- if .Values.postfix.milters_active }}
-    postconf "smtpd_smtpd_milters = {{ .Values.postfix.smtpd_milters | join "," }}"
-    postconf "non_smtpd_smtpd_milters = {{ .Values.postfix.non_smtpd_milters | join "," }}"
+    postconf "smtpd_milters = {{ .Values.postfix.smtpd_milters | join "," }}"
+    postconf "non_smtpd_milters = {{ .Values.postfix.non_smtpd_milters | join "," }}"
     {{- if .Values.postfix.other_milter_config }}
     {{- range .Values.postfix.other_milter_config }}
     {{ . }}
