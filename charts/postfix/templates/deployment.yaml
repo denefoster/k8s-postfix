@@ -122,12 +122,20 @@ spec:
         {{- if .Values.persistence.queue.enabled }}
         - name: {{ include "postfix.fullname" . }}-queue
           persistentVolumeClaim:
+            {{- if .Values.persistence.queue.existingClaim }}
+            claimName: {{ .Values.persistence.queue.existingClaim }}
+            {{- else }}
             claimName: {{ include "postfix.fullname" . }}-queue
+            {{- end }}
         {{- end }}
         {{- if .Values.persistence.sasl.enabled }}
         - name: {{ include "postfix.fullname" . }}-sasl
           persistentVolumeClaim:
+            {{- if .Values.persistence.sasl.existingClaim }}
+            claimName: {{ .Values.persistence.sasl.existingClaim }}
+            {{- else }}
             claimName: {{ include "postfix.fullname" . }}-sasl
+            {{- end }}
         {{- end }}
         {{- if .Values.postfix.tlsEnabled }}
         - name: {{ .Values.postfix.tlsExistingSecretName }}
