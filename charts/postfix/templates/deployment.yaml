@@ -67,7 +67,7 @@ spec:
               mountPath: /etc/postfix/body_checks
               subPath: body_checks
           {{- end }}
-          {{- if .Values.postfix.envelopep_sender_checks }}
+          {{- if .Values.postfix.envelope_sender_checks }}
             - name: postfix-init
               mountPath: /etc/postfix/envelope_sender_checks
               subPath: envelope_sender_checks
