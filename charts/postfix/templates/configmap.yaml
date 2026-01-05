@@ -100,8 +100,8 @@ data:
     {{- end }}
 
     # SMTP recipients
-    {{ if .Values.postfix.local_recipient_maps }}
-    postconf "local_recipient_maps = {{ keys .Values.postfix.local_recipient_maps | join ", "}}"
+    {{ if .Values.postfix.relay_recipient_maps }}
+    postconf "relay_recipient_maps = {{ keys .Values.postfix.relay_recipient_maps | join ", "}}"
     {{- end }}
 
     {{ if .Values.postfix.virtual_alias_maps }}

@@ -99,8 +99,8 @@ spec:
               mountPath: /etc/postfix/{{ .existingSecretKey }}
           {{- end }}
           {{- end }}
-          {{- if .Values.postfix.local_recipient_maps }}
-            {{- range $pfmap := .Values.postfix.local_recipient_maps }}
+          {{- if .Values.postfix.relay_recipient_maps }}
+            {{- range $pfmap := .Values.postfix.relay_recipient_maps }}
             - name: {{ .existingSecretName }}
               subPath: {{ .existingSecretKey }}
               mountPath: /etc/postfix/{{ .existingSecretKey }}
@@ -163,7 +163,7 @@ spec:
             secretName: {{ .Values.postfix.tlsExistingSecretName }}
         {{- end }}
         {{- $new := dict }}
-        {{- $allMaps := merge $new .Values.postfix.transport_maps .Values.postfix.relay_domains .Values.postfix.local_recipient_maps .Values.postfix.virtual_alias_maps }}
+        {{- $allMaps := merge $new .Values.postfix.transport_maps .Values.postfix.relay_domains .Values.postfix.relay_recipient_maps .Values.postfix.virtual_alias_maps }}
         {{- $newList := list }}
         {{- $newer := list }}
         {{- range $allMaps }}

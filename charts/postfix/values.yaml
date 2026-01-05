@@ -102,7 +102,7 @@ postfix:
     "pgsql:/etc/postfix/pgsql-relay-domains.cf":
       existingSecretName: pgsql-relay-domains
       existingSecretKey: pgsql-relay-domains.cf
-  local_recipient_maps:
+  relay_recipient_maps:
     "pgsql:/etc/postfix/pgsql-mailman-recipients.cf":
       existingSecretName: pgsql-mailman-recipients
       existingSecretKey: pgsql-mailman-recipients.cf
