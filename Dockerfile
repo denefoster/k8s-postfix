@@ -10,10 +10,10 @@ ENV MAILNAME=mail.example.com
 ENV MY_NETWORKS="172.17.0.0/16 127.0.0.0/8"
 ENV MY_DESTINATION="localhost.localdomain, localhost"
 ENV ROOT_ALIAS="admin@example.com"
-ENV LOG_TO_STDOUT=1
+ENV LOG_TO_STDOUT=0
 
 
-RUN apk add --no-cache postfix postfix-pgsql postfix-pcre cyrus-sasl
+RUN apk add --no-cache postfix postfix-pgsql postfix-pcre cyrus-sasl syslog-ng
 
 RUN postconf -e mydestination="localhost.localdomain, localhost" && \
   postconf -e smtpd_banner='$myhostname ESMTP $mail_name' && \
@@ -33,4 +33,6 @@ COPY ./etc/postfix/sasl/smtpd.conf /etc/postfix/sasl
 COPY ./etc/aliases /etc/aliases
 COPY ./etc/service/postfix /etc/service/postfix
 COPY ./etc/service/saslauthd /etc/service/saslauthd
+COPY ./etc/service/syslog-ng /etc/service/syslog-ng
 COPY ./usr/local/bin /usr/local/bin
+COPY ./etc/syslog-ng/syslog-ng.conf /etc/syslog-ng/syslog-ng.conf

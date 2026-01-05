@@ -52,6 +52,10 @@ spec:
             - name: postfix-init
               mountPath: /etc/service/postfix/run.initialization
               subPath: run.initialization
+            - name: {{ include "postfix.fullname" . }}-logs
+              mountPath: /var/log/postfix
+            - name: {{ include "postfix.fullname" . }}-queue
+              mountPath: /var/spool/postfix
           {{- if .Values.postfix.helo_checks }}
             - name: postfix-init
               mountPath: /etc/postfix/helo_checks
@@ -81,10 +85,6 @@ spec:
             - name: {{ include "postfix.fullname" . }}-sasl
               mountPath: /etc/sasl2
           {{- end }}
-          {{- if .Values.persistence.queue.enabled }}
-            - name: {{ include "postfix.fullname" . }}-queue
-              mountPath: /var/spool/postfix
-          {{- end }}
           {{- if .Values.postfix.transport_maps }}
             {{- range $pfmap := .Values.postfix.transport_maps }}
             - name: {{ .existingSecretName }}
@@ -113,29 +113,49 @@ spec:
               mountPath: /etc/postfix/{{ .existingSecretKey }}
           {{- end }}
           {{- end }}
+        - name: exporter
+          image: ghcr.io/hsn723/postfix_exporter
+          imagePullPolicy: IfNotPresent
+          args:
+          - --postfix.showq_path
+          - /var/spool/postfix/public/showq
+          - --postfix.logfile_path
+          - /var/log/postfix/current
+          volumeMounts:
+            - name: {{ include "postfix.fullname" . }}-queue
+              mountPath: /var/spool/postfix
+            - name: {{ include "postfix.fullname" . }}-logs
+              mountPath: /var/log/postfix
+
       volumes:
         {{- $mounts := list }}
         - name: postfix-init
           configMap:
             name: postfix-init
             defaultMode: 0777
-        {{- if .Values.persistence.queue.enabled }}
+        - name: {{ include "postfix.fullname" . }}-logs
+          emptyDir: {}
         - name: {{ include "postfix.fullname" . }}-queue
+        {{- if .Values.persistence.queue.enabled }}
           persistentVolumeClaim:
             {{- if .Values.persistence.queue.existingClaim }}
             claimName: {{ .Values.persistence.queue.existingClaim }}
             {{- else }}
             claimName: {{ include "postfix.fullname" . }}-queue
             {{- end }}
+        {{- else }}
+          emptyDir: {}
         {{- end }}
-        {{- if .Values.persistence.sasl.enabled }}
         - name: {{ include "postfix.fullname" . }}-sasl
+        {{- if .Values.persistence.sasl.enabled }}
           persistentVolumeClaim:
             {{- if .Values.persistence.sasl.existingClaim }}
             claimName: {{ .Values.persistence.sasl.existingClaim }}
             {{- else }}
             claimName: {{ include "postfix.fullname" . }}-sasl
             {{- end }}
+        {{- else }}
+          emptyDir: {}
         {{- end }}
         {{- if .Values.postfix.tlsEnabled }}
         - name: {{ .Values.postfix.tlsExistingSecretName }}
