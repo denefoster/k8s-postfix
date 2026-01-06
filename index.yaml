@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   postfix:
   - apiVersion: v2
+    appVersion: 1.0.21
+    created: "2026-01-06T19:44:21.821508015Z"
+    description: A Helm chart for Kubernetes
+    digest: 3b1c6c6c086b278f4b66e839d1431647dd8994d11fd0be312e2b51b0c66d7912
+    name: postfix
+    type: application
+    urls:
+    - https://github.com/denefoster/k8s-postfix/releases/download/postfix-1.0.21/postfix-1.0.21.tgz
+    version: 1.0.21
+  - apiVersion: v2
     appVersion: 1.0.20
     created: "2026-01-05T23:00:54.528009699Z"
     description: A Helm chart for Kubernetes
@@ -141,4 +151,4 @@ entries:
     urls:
     - https://github.com/denefoster/k8s-postfix/releases/download/postfix-1.0.6/postfix-1.0.6.tgz
     version: 1.0.6
-generated: "2026-01-05T23:00:54.528113983Z"
+generated: "2026-01-06T19:44:21.821623911Z"
