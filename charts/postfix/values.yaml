@@ -1,6 +1,7 @@
 pgsql_transport:
   create: false
   name: pgsql_transport
+  postscreenEnabled: true
   data:
     pgsql_transport: |
       user         = my_db_user
