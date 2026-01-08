@@ -99,6 +99,20 @@ data:
     postconf "relay_domains = {{ keys .Values.postfix.relay_domains | join ", " }}"
     {{- end }}
 
+    # SMTP Sender config
+    # You still need some manual config, applied via the $extra_config parameter
+    # 
+    postconf "smtpd_restriction_classes = {{ .Values.postfix.smtpd_restriction_classes | join " " }}"
+
+    {{ if .Values.postfix.restricted_sender_maps }}
+    postconf "smtpd_sender_restrictions = check_sender_access {{ keys .Values.postfix.restricted_sender_maps | join ", "}}"
+    {{- end }}
+
+
+    {{ if .Values.postfix.restricted_sender_maps }}
+    postconf "smtpd_sender_restrictions = check_sender_access {{ keys .Values.postfix.restricted_sender_maps | join ", "}}"
+    {{- end }}
+
     # SMTP recipients
     {{ if .Values.postfix.relay_recipient_maps }}
     postconf "relay_recipient_maps = {{ keys .Values.postfix.relay_recipient_maps | join ", "}}"

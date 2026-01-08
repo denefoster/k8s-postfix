@@ -1,9 +1,30 @@
+pgsql_restriction_classes:
+  create: false
+  name: pgsql_restriction_classes
+  data:
+    pgsql_restriction_class_ombudsteam_only.cf: |
+      user         = my_db_user
+      password     = my_db_pass
+      dbname       = my_db_name
+      hosts        = my_db_host
+      query        = SELECT allowed FROM ombudsteam WHERE email='%s'
+
+pgsql_restricted_senders:
+  create: false
+  name: pgsql_restricted_senders
+  data:
+    pgsql_restricted_senders.cf: |
+      user         = my_db_user
+      password     = my_db_pass
+      dbname       = my_db_name
+      hosts        = my_db_host
+      query        = select email from mailman_recipients where email = '%s'
+
 pgsql_transport:
   create: false
   name: pgsql_transport
-  postscreenEnabled: true
   data:
-    pgsql_transport: |
+    pgsql_transport.cf: |
       user         = my_db_user
       password     = my_db_pass
       dbname       = my_db_name
@@ -14,7 +35,7 @@ pgsql_transport_mm:
   create: false
   name: pgsql_transport_mm
   data:
-    pgsql_transport_mm: |
+    pgsql_transport_mm.cf: |
       user         = my_db_user
       password     = my_db_pass
       dbname       = my_db_name
@@ -25,7 +46,7 @@ pgsql_relay_domains_mm:
   create: false
   name: pgsql_relay_domains_mm
   data:
-    pgsql_relay_domains_mm: |
+    pgsql_relay_domains_mm.cf: |
       user         = my_db_user
       password     = my_db_pass
       dbname       = my_db_name
@@ -36,7 +57,7 @@ pgsql_relay_domains:
   create: false
   name: pgsql_relay_domains
   data:
-    pgsql_relay_domains: |
+    pgsql_relay_domains.cf: |
       user         = my_db_user
       password     = my_db_pass
       dbname       = my_db_name
@@ -47,7 +68,7 @@ pgsql_mailman_recipients:
   create: false
   name: pgsql_mailman_recipients
   data:
-    pgsql_mailman_recipients: |
+    pgsql_mailman_recipients.cf: |
       user         = my_db_user
       password     = my_db_pass
       dbname       = my_db_name
@@ -58,7 +79,7 @@ pgsql_virtual_recipients:
   create: false
   name: pgsql_mailman_recipients
   data:
-    pgsql_mailman_recipients: |
+    pgsql_mailman_recipients.cf: |
       user         = my_db_user
       password     = my_db_pass
       dbname       = my_db_name
@@ -69,7 +90,7 @@ pgsql_virtual:
   create: false
   name: pgsql-virtual
   data:
-    pgsql_virtual: |
+    pgsql_virtual.cf: |
       user         = my_db_user
       password     = my_db_pass
       dbname       = my_db_name
@@ -92,6 +113,7 @@ mx_tls:
 
 postfix:
   hostname: mx.mydomain.com
+  postscreenEnabled: true
   mynetworks:
     - 127.0.0.0/8
     - 10.0.0.0/8
@@ -104,7 +126,16 @@ postfix:
     - permit_mynetworks
     - permit_sasl_authenticated
     - reject_unauth_destination
-
+  smtpd_restriction_classes:
+    - ombudsteam_only
+  restricted_sender_maps:
+    "pgsql:/etc/postfix/pgsql-restricted-senders.cf":
+      existingSecretName: pgsql-restricted_senders
+      existingSecretKey: pgsql-restricted_senders.cf
+  restriction_class_maps:
+    "pgsql-ombudsteam_only.cf":
+      existingSecretName: pgsql-restriction_classes
+      existingSecretKey: pgsql-restriction_class_ombudsteam_only.cf
   transport_maps:
     "pgsql:/etc/postfix/pgsql-transport.cf":
       existingSecretName: pgsql-transport
@@ -279,3 +310,24 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+metrics:
+  serviceMonitor:
+    # -- Setting that allows the creation of a Prometheus ServiceMonitor resource for postfix components.
+    enabled: true
+    # -- Additional labels for the Prometheus ServiceMonitor resource.
+    additionalLabels: {}
+    # -- Annotations for the Prometheus ServiceMonitor resource.
+    annotations: {}
+    # -- Interval at which Prometheus scrapes the metrics from the target.
+    interval: ""
+    # -- Timeout after which Prometheus considers the scrape to be failed.
+    scrapeTimeout: ""
+    # -- Configures the relabeling rules to apply the target’s metadata labels. See the [Prometheus Operator
+    # documentation](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.Endpoint) for
+    # formatting details.
+    relabelings: []
+    # -- Configures the relabeling rules to apply to the samples before ingestion. See the [Prometheus Operator
+    # documentation](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.Endpoint) for
+    # formatting details.
+    metricRelabelings: []

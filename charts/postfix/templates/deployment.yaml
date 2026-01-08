@@ -81,9 +81,23 @@ spec:
               mountPath: /etc/tls
               readOnly: true
           {{- end }}
+          {{- if .Values.postfix.restriction_class_maps }}
+            {{- range $pfmap := .Values.postfix.restriction_class_maps }}
+            - name: {{ .existingSecretName }}
+              subPath: {{ .existingSecretKey }}
+              mountPath: /etc/postfix/{{ .existingSecretKey }}
+          {{- end }}
+          {{- end }}
           {{- if .Values.persistence.sasl.enabled }}
             - name: {{ include "postfix.fullname" . }}-sasl
               mountPath: /etc/sasl2
+          {{- end }}
+          {{- if .Values.postfix.restricted_sender_maps }}
+            {{- range $pfmap := .Values.postfix.restricted_sender_maps }}
+            - name: {{ .existingSecretName }}
+              subPath: {{ .existingSecretKey }}
+              mountPath: /etc/postfix/{{ .existingSecretKey }}
+          {{- end }}
           {{- end }}
           {{- if .Values.postfix.transport_maps }}
             {{- range $pfmap := .Values.postfix.transport_maps }}
@@ -163,7 +177,13 @@ spec:
             secretName: {{ .Values.postfix.tlsExistingSecretName }}
         {{- end }}
         {{- $new := dict }}
-        {{- $allMaps := merge $new .Values.postfix.transport_maps .Values.postfix.relay_domains .Values.postfix.relay_recipient_maps .Values.postfix.virtual_alias_maps }}
+        {{- $allMaps := merge $new
+        .Values.postfix.restricted_sender_maps
+        .Values.postfix.restriction_class_maps
+        .Values.postfix.transport_maps
+        .Values.postfix.relay_domains
+        .Values.postfix.relay_recipient_maps
+        .Values.postfix.virtual_alias_maps }}
         {{- $newList := list }}
         {{- $newer := list }}
         {{- range $allMaps }}
