@@ -130,11 +130,11 @@ postfix:
     - ombudsteam_only
   restricted_sender_maps:
     "pgsql:/etc/postfix/pgsql-restricted-senders.cf":
-      existingSecretName: pgsql-restricted_senders
-      existingSecretKey: pgsql-restricted_senders.cf
+      existingSecretName: pgsql-restricted-senders
+      existingSecretKey: pgsql-restricted-senders.cf
   restriction_class_maps:
     "pgsql-ombudsteam_only.cf":
-      existingSecretName: pgsql-restriction_classes
+      existingSecretName: pgsql-restriction-classes
       existingSecretKey: pgsql-restriction_class_ombudsteam_only.cf
   transport_maps:
     "pgsql:/etc/postfix/pgsql-transport.cf":
@@ -164,7 +164,7 @@ postfix:
 
 
   tlsEnabled: true
-  tlsExistingSecretName: mx_tls
+  tlsExistingSecretName: mx-tls
   helo_checks:
     - name: localhost
       action: REJECT
