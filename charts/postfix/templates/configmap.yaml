@@ -101,7 +101,7 @@ data:
 
     # SMTP Sender config
     # You still need some manual config, applied via the $extra_config parameter
-    # 
+    #
     postconf "smtpd_restriction_classes = {{ .Values.postfix.smtpd_restriction_classes | join " " }}"
 
     {{ if .Values.postfix.restricted_sender_maps }}

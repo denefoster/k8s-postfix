@@ -77,9 +77,9 @@ pgsql_mailman_recipients:
 
 pgsql_virtual_recipients:
   create: false
-  name: pgsql_mailman_recipients
+  name: pgsql_virtual_recipients
   data:
-    pgsql_mailman_recipients.cf: |
+    pgsql_virtual_recipients.cf: |
       user         = my_db_user
       password     = my_db_pass
       dbname       = my_db_name
