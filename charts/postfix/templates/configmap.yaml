@@ -134,7 +134,7 @@ data:
     postconf "smtpd_client_recipient_rate_limit = {{ .Values.postfix.smtpLimits.clientRecipientRate }}"
     {{- end }}
     {{- if .Values.postfix.smtpLimits.messageSize }}
-    postconf "message_size_limit = {{ .Values.postfix.smtpLimits.messageSize }}"
+    postconf "message_size_limit = {{ int64 .Values.postfix.smtpLimits.messageSize }}"
     {{- end }}
     {{- if .Values.postfix.smtpLimits.recipientLimit }}
     postconf "smtpd_recipient_limit = {{ .Values.postfix.smtpLimits.recipientLimit }}"
