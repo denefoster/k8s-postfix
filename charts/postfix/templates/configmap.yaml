@@ -125,6 +125,25 @@ data:
     postconf "smtpd_recipient_restrictions = {{ .Values.postfix.smtpd_recipient_restrictions | join " " }}"
     postconf "smtpd_relay_restrictions = {{ .Values.postfix.smtpd_relay_restrictions | join " " }}"
 
+    # SMTP limits
+    {{- if .Values.postfix.smtpLimits }}
+    {{- if .Values.postfix.smtpLimits.clientMessageRate }}
+    postconf "smtpd_client_message_rate_limit = {{ .Values.postfix.smtpLimits.clientMessageRate }}"
+    {{- end }}
+    {{- if .Values.postfix.smtpLimits.clientRecipientRate }}
+    postconf "smtpd_client_recipient_rate_limit = {{ .Values.postfix.smtpLimits.clientRecipientRate }}"
+    {{- end }}
+    {{- if .Values.postfix.smtpLimits.messageSize }}
+    postconf "message_size_limit = {{ .Values.postfix.smtpLimits.messageSize }}"
+    {{- end }}
+    {{- if .Values.postfix.smtpLimits.recipientLimit }}
+    postconf "smtpd_recipient_limit = {{ .Values.postfix.smtpLimits.recipientLimit }}"
+    {{- end }}
+    {{- if .Values.postfix.smtpLimits.recipientOvershoot }}
+    postconf "smtpd_recipient_overshoot_limit = {{ .Values.postfix.smtpLimits.recipientOvershoot }}"
+    {{- end }}
+    {{- end }}
+
     {{ if .Values.postfix.extra_config }}
     {{- range .Values.postfix.extra_config }}
     {{ . }}
