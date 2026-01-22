@@ -126,22 +126,20 @@ data:
     postconf "smtpd_relay_restrictions = {{ .Values.postfix.smtpd_relay_restrictions | join " " }}"
 
     # SMTP limits
-    {{- if .Values.postfix.smtpLimits }}
-    {{- if .Values.postfix.smtpLimits.clientMessageRate }}
-    postconf "smtpd_client_message_rate_limit = {{ .Values.postfix.smtpLimits.clientMessageRate }}"
+    {{- if .Values.postfix.smtpd_client_message_rate_limit }}
+    postconf "smtpd_client_message_rate_limit = {{ .Values.postfix.smtpd_client_message_rate_limit }}"
     {{- end }}
-    {{- if .Values.postfix.smtpLimits.clientRecipientRate }}
-    postconf "smtpd_client_recipient_rate_limit = {{ .Values.postfix.smtpLimits.clientRecipientRate }}"
+    {{- if .Values.postfix.smtpd_client_recipient_rate_limit }}
+    postconf "smtpd_client_recipient_rate_limit = {{ .Values.postfix.smtpd_client_recipient_rate_limit }}"
     {{- end }}
-    {{- if .Values.postfix.smtpLimits.messageSize }}
-    postconf "message_size_limit = {{ int64 .Values.postfix.smtpLimits.messageSize }}"
+    {{- if .Values.postfix.message_size_limit }}
+    postconf "message_size_limit = {{ int64 .Values.postfix.message_size_limit }}"
     {{- end }}
-    {{- if .Values.postfix.smtpLimits.recipientLimit }}
-    postconf "smtpd_recipient_limit = {{ .Values.postfix.smtpLimits.recipientLimit }}"
+    {{- if .Values.postfix.smtpd_recipient_limit }}
+    postconf "smtpd_recipient_limit = {{ .Values.postfix.smtpd_recipient_limit }}"
     {{- end }}
-    {{- if .Values.postfix.smtpLimits.recipientOvershoot }}
-    postconf "smtpd_recipient_overshoot_limit = {{ .Values.postfix.smtpLimits.recipientOvershoot }}"
-    {{- end }}
+    {{- if .Values.postfix.smtpd_recipient_overshoot_limit }}
+    postconf "smtpd_recipient_overshoot_limit = {{ .Values.postfix.smtpd_recipient_overshoot_limit }}"
     {{- end }}
 
     {{ if .Values.postfix.extra_config }}

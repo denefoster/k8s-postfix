@@ -204,12 +204,12 @@ spec:
         {{- end }}
         {{- $new := dict }}
         {{- $allMaps := merge $new
-        .Values.postfix.restricted_sender_maps
-        .Values.postfix.restriction_class_maps
-        .Values.postfix.transport_maps
-        .Values.postfix.relay_domains
-        .Values.postfix.relay_recipient_maps
-        .Values.postfix.virtual_alias_maps }}
+        (.Values.postfix.restricted_sender_maps | default dict)
+        (.Values.postfix.restriction_class_maps | default dict)
+        (.Values.postfix.transport_maps | default dict)
+        (.Values.postfix.relay_domains | default dict)
+        (.Values.postfix.relay_recipient_maps | default dict)
+        (.Values.postfix.virtual_alias_maps | default dict) }}
         {{- $newList := list }}
         {{- $newer := list }}
         {{- range $allMaps }}

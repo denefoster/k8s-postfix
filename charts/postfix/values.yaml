@@ -114,12 +114,11 @@ mx_tls:
 postfix:
   hostname: mx.mydomain.com
   postscreenEnabled: true
-  smtpLimits:
-    clientMessageRate: 0
-    clientRecipientRate: 0
-    messageSize: 0
-    recipientLimit: 0
-    recipientOvershoot: 0
+  smtpd_client_message_rate_limit: 0
+  smtpd_client_recipient_rate_limit: 0
+  message_size_limit: 0
+  smtpd_recipient_limit: 0
+  smtpd_recipient_overshoot_limit: 0
   mynetworks:
     - 127.0.0.0/8
     - 10.0.0.0/8
