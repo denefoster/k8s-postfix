@@ -13,7 +13,7 @@ ENV ROOT_ALIAS="admin@example.com"
 ENV LOG_TO_STDOUT=0
 
 
-RUN apk add --no-cache postfix postfix-pgsql postfix-pcre cyrus-sasl syslog-ng
+RUN apk add --no-cache postfix postfix-pgsql postfix-pcre cyrus-sasl syslog-ng cyrus-sasl-sql
 
 RUN postconf -e mydestination="localhost.localdomain, localhost" && \
   postconf -e smtpd_banner='$myhostname ESMTP $mail_name' && \
@@ -30,9 +30,10 @@ RUN postconf -e mydestination="localhost.localdomain, localhost" && \
 ENV POSTFIX_PATH="/usr/libexec/postfix/master"
 
 COPY ./etc/postfix/sasl/smtpd.conf /etc/postfix/sasl
-COPY ./etc/aliases /etc/aliases
+COPY ./etc/postfix/aliases /etc/postfix/aliases
 COPY ./etc/service/postfix /etc/service/postfix
 COPY ./etc/service/saslauthd /etc/service/saslauthd
 COPY ./etc/service/syslog-ng /etc/service/syslog-ng
 COPY ./usr/local/bin /usr/local/bin
 COPY ./etc/syslog-ng/syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
+COPY ./usr/libexec/postfix/postfix-script /usr/libexec/postfix/postfix-script

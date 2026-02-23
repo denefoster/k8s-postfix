@@ -1,3 +1,4 @@
+{{- if eq .Values.postfix.deploymentType "deployment" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,13 +9,18 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "postfix.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
@@ -55,7 +61,7 @@ spec:
             exec:
               command:
                 - postfix
-                - status
+                - health
             initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
@@ -63,8 +69,10 @@ spec:
           {{- end }}
           {{- if .Values.probes.readiness.enabled }}
           readinessProbe:
-            tcpSocket:
-              port: 25
+            exec:
+              command:
+                - postfix
+                - health
             initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
@@ -153,6 +161,11 @@ spec:
               mountPath: /etc/postfix/{{ .existingSecretKey }}
           {{- end }}
           {{- end }}
+          {{- if .Values.postfix.smtp_client_auth.enabled }}
+            - name: postfix-smtp-password
+              subPath: {{ .Values.postfix.smtp_client_auth.existingSecretKey }}
+              mountPath: /etc/postfix/{{ .Values.postfix.smtp_client_auth.existingSecretKey }}
+          {{- end }}
         - name: exporter
           image: ghcr.io/hsn723/postfix_exporter
           imagePullPolicy: IfNotPresent
@@ -168,6 +181,11 @@ spec:
               mountPath: /var/log/postfix
 
       volumes:
+        {{- if .Values.postfix.smtp_client_auth.enabled }}
+        - name: postfix-smtp-password
+          secret:
+            secretName: {{ .Values.postfix.smtp_client_auth.existingSecretName }}
+        {{- end }}
         {{- $mounts := list }}
         - name: postfix-init
           configMap:
@@ -233,3 +251,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}

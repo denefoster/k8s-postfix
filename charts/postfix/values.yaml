@@ -1,3 +1,25 @@
+sasl_db:
+  create: false
+  name: sasl_db
+  data:
+    smtpd.conf: |
+      pwcheck_method: auxprop
+      auxprop_plugin: sql
+      mech_list: PLAIN LOGIN CRAM-MD5 DIGEST-MD5 NTLM
+      sql_engine: pgsql
+      sql_hostnames: dbhost
+      sql_user: dbuser
+      sql_passwd: dbpass
+      sql_database: postfix
+      sql_select: SELECT password FROM smtp_users WHERE username = '%u@%r'
+
+smtp_password:
+  create: false
+  name: smtp_password
+  data:
+    smtp_password: |
+      smart_relay.example.com  my_username:mypassword
+
 pgsql_restriction_classes:
   create: false
   name: pgsql_restriction_classes
@@ -112,13 +134,24 @@ mx_tls:
 
 
 postfix:
+  deploymentType: statefulSet
   hostname: mx.mydomain.com
   postscreenEnabled: true
+  sasl_pgsql:
+    enabled: false
+    existingSecretName: sasl-pgsql
+    existingSecretKey: smtpd.conf
+  smtp_client_auth:
+    enabled: false
+    encrypted: true
+    existingSecretName: smtp-password
+    existingSecretKey: smtp-password
   smtpd_client_message_rate_limit: 0
   smtpd_client_recipient_rate_limit: 0
   message_size_limit: 0
   smtpd_recipient_limit: 0
   smtpd_recipient_overshoot_limit: 0
+
   mynetworks:
     - 127.0.0.0/8
     - 10.0.0.0/8
@@ -190,6 +223,11 @@ postfix:
   non_smtpd_milters:
     - inet:[rspamd]:11332
 
+statefulSet:
+  replicas: 2
+  annotations: {}
+
+
 persistence:
   # -- Enable persistence using Persistent Volume Claims
   # ref: http://kubernetes.io/docs/user-guide/persistent-volumes/.
@@ -207,7 +245,7 @@ persistence:
     # -- Only mount a subpath of the Volume into the pod
     subPath: ""
   queue:
-    enabled: false
+    enabled: true
     name: queue
     existingClaim: ""
     accessMode: ReadWriteOnce
@@ -226,9 +264,12 @@ persistence:
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
 
+strategy:
+  type: Recreate
+
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
-  repository: ghcr.io/denefoster/k8s-postfix
+  repository: ghcr.io/ietf-tools/container-postfix
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
@@ -272,6 +313,7 @@ securityContext: {}
 
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
+  annotations: {}
   # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
   type: ClusterIP
 

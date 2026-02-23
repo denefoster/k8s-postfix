@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "postfix.fullname" . }}
+  name: {{ include "postfix.fullname" . }}-internal
   labels:
     {{- include "postfix.labels" . | nindent 4 }}
   {{- with .Values.service.annotations }}
@@ -9,10 +9,8 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ .Values.service.type }}
-  {{- if eq .Values.service.type "LoadBalancer" }}
-  externalTrafficPolicy: Local
-  {{- end }}
+  clusterIP: None
+  publishNotReadyAddresses: true
   ports:
     - port: 25
       name: smtp
