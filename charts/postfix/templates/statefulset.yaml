@@ -146,12 +146,22 @@ spec:
       - name: exporter
         image: ghcr.io/hsn723/postfix_exporter
         imagePullPolicy: IfNotPresent
-        restartPolicy: Always
         args:
+          - --postfix.smtp_service_label
+          - smtpd
+          - --postfix.smtp_service_label
+          - submission/smtpd
           - --postfix.showq_path
           - /var/spool/postfix/public/showq
           - --postfix.logfile_path
           - /var/log/postfix/current
+          - --log.unsupported
+          - --postfix.showq_network
+          - tcp
+        ports:
+          - name: metrics
+            containerPort: 9154
+            protocol: TCP
         volumeMounts:
           - name: queue
             mountPath: /var/spool/postfix
@@ -175,11 +185,6 @@ spec:
         - name: postfix-smtp-password
           secret:
             secretName: {{ .Values.postfix.smtp_client_auth.existingSecretName }}
-        {{- end }}
-        {{- if .Values.postfix.sasl_pgsql.enabled }}
-        - name: postfix-sasl-pgsql
-          secret:
-            secretName: {{ .Values.postfix.sasl_pgsql.existingSecretName }}
         {{- end }}
         {{- $mounts := list }}
         - name: postfix-init
@@ -209,6 +214,25 @@ spec:
           secret:
             secretName: {{ $secretName }}
         {{- end }}
+      {{- with .Values.dnsPolicy }}
+      dnsPolicy: {{ . }}
+      {{- end }}
+      {{- with .Values.dnsConfig }}
+      dnsConfig:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
   volumeClaimTemplates:
     {{- if .Values.persistence.queue.enabled }}
     - apiVersion: v1

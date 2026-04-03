@@ -11,6 +11,7 @@ ENV MY_NETWORKS="172.17.0.0/16 127.0.0.0/8"
 ENV MY_DESTINATION="localhost.localdomain, localhost"
 ENV ROOT_ALIAS="admin@example.com"
 ENV LOG_TO_STDOUT=0
+ENV DINIT_JSON_STDOUT=0
 
 COPY ./libs /tmp/libs
 
