@@ -15,7 +15,7 @@ ENV DINIT_JSON_STDOUT=1
 
 COPY ./libs /tmp/libs
 
-RUN apk add --no-cache postfix postfix-pgsql postfix-pcre cyrus-sasl syslog-ng
+RUN apk add --no-cache postfix postfix-pgsql postfix-pcre cyrus-sasl syslog-ng python3
 
 RUN postconf -e mydestination="localhost.localdomain, localhost" && \
   postconf -e smtpd_banner='$myhostname ESMTP $mail_name' && \
@@ -33,11 +33,12 @@ RUN postconf -e mydestination="localhost.localdomain, localhost" && \
 
 ENV POSTFIX_PATH="/usr/libexec/postfix/master"
 
+COPY ./usr/local/bin/logger.py /usr/local/bin/logger.py
 COPY ./etc/postfix/sasl/smtpd.conf /etc/postfix/sasl
 COPY ./etc/postfix/aliases /etc/postfix/aliases
 COPY ./etc/service/postfix /etc/service/postfix
 COPY ./etc/service/saslauthd /etc/service/saslauthd
-COPY ./etc/service/syslog-ng /etc/service/syslog-ng
+COPY ./etc/service/logger /etc/service/logger
 COPY ./usr/local/bin /usr/local/bin
 COPY ./etc/syslog-ng/syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
 COPY ./usr/libexec/postfix/postfix-script /usr/libexec/postfix/postfix-script
